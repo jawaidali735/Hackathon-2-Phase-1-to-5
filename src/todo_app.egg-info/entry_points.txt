@@ -1,3 +1,2 @@
 [console_scripts]
-todo = todo_app.main:main
-todo-interactive = todo_app.interactive_main:main
+todo = main:main
