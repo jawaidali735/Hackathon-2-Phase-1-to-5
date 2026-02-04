@@ -9,9 +9,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return a response that redirects to the homepage
-    return Response.redirect(new URL('/', request.url), {
-      status: 302,
-    });
+    return Response.redirect(new URL('/', request.url), 302);
   } catch (error) {
     console.error('Sign out error:', error);
     return Response.json({ error: 'Failed to sign out' }, { status: 500 });
