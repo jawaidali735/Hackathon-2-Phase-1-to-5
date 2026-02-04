@@ -1,13 +1,3 @@
 {
-  "version": 2,
-  "rootDirectory": ".",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "zeroConfig": true
-      }
-    }
-  ]
+  "version": 2
 }
