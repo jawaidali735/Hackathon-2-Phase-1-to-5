@@ -42,3 +42,4 @@ next-env.d.ts
 
 # Deployment trigger
 # Rebuild: 2026-02-05-01
+.env*.local

@@ -41,7 +41,15 @@
       "Bash(npx cross-env DATABASE_URL=\"postgresql://neondb_owner:npg_X9jxJwg6mSfM@ep-orange-night-ahjqz8d9-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx drizzle-kit push --force)",
       "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 3000 | Select-Object -Property OwningProcess\")",
       "Bash(npm run build)",
-      "Bash(.venv/Scripts/python.exe:*)"
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(findstr auth)",
+      "Bash(dir \"D:\\\\hackathon\\\\todo-app\\\\frontend\\\\src\\\\app\\\\\\(auth\\)\\\\login\")",
+      "Bash(findstr env)",
+      "Bash(python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(tasklist)",
+      "Bash(findstr 2572)",
+      "Bash(del \"D:\\\\hackathon\\\\todo-app\\\\frontend\\\\.next\\\\dev\\\\lock\")",
+      "Bash(PORT=3000 npm run dev)"
     ]
   }
 }
