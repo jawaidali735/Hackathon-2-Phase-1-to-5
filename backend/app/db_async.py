@@ -1,0 +1,65 @@
+"""
+Async database configuration for chatbot service.
+Uses SQLAlchemy async engine with asyncpg driver.
+"""
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel.ext.asyncio.session import AsyncSession
+from .core.config import settings
+
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+# Neon requires sslmode=require for secure connections
+# asyncpg uses 'postgresql+asyncpg://'
+database_url = settings.DATABASE_URL
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+# Clean up query params for asyncpg
+parsed = urlparse(database_url)
+qs = parse_qs(parsed.query)
+
+# Remove unsupported keys
+for key in ["sslmode", "channel_binding", "options"]:
+    qs.pop(key, None)
+
+# Rebuild URL without forcing ssl query params; we'll pass SSL via connect_args
+new_query = urlencode(qs, doseq=True)
+database_url = urlunparse(parsed._replace(query=new_query))
+
+# Determine connect args: enable SSL for non-local hosts (e.g., Neon)
+connect_args = {}
+hostname = parsed.hostname or ""
+if hostname not in ("localhost", "127.0.0.1", ""):
+    # asyncpg expects `ssl` argument (True or SSLContext) instead of sslmode
+    connect_args = {"ssl": True}
+
+async_engine = create_async_engine(
+    database_url,
+    echo=True,
+    future=True,
+    connect_args=connect_args,
+    pool_pre_ping=True,  # Check connection liveness before using
+    pool_recycle=300,    # Recycle connections every 5 minutes
+    pool_size=10,        # Set pool size
+    max_overflow=20      # Allow overflow
+)
+
+from sqlmodel import SQLModel
+
+async def get_async_session() -> AsyncSession:
+    """
+    Get an async database session for chatbot operations.
+    """
+    async_session = sessionmaker(
+        async_engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with async_session() as session:
+        yield session
+
+async def create_async_db_and_tables():
+    """
+    Create all database tables asynchronously.
+    """
+    async with async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)

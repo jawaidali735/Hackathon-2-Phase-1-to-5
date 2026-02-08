@@ -1,12 +1,20 @@
 /**
  * Server-side API Service
  * Handles all communication with the backend API
- * Production-ready with proper error handling and logging
+ * Production-ready with proper error handling
  */
 
 import type { Task, TaskCreateInput, TaskUpdateInput, TaskResponse } from '@/types/task';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+
+/**
+ * API Response wrapper with backend status
+ */
+export interface ApiResult<T> {
+  data: T;
+  backendConnected: boolean;
+}
 
 /**
  * Create request headers with JWT authentication
@@ -19,39 +27,32 @@ function createHeaders(jwt: string): HeadersInit {
 }
 
 /**
- * Handle API errors consistently
+ * Get all tasks for a user - returns data + connection status
  */
-async function handleApiError(response: Response, operation: string): Promise<never> {
-  const errorText = await response.text().catch(() => 'Unknown error');
-  const errorMessage = `${operation} failed: ${response.status} ${response.statusText} - ${errorText}`;
-  console.error(errorMessage);
-  throw new Error(errorMessage);
-}
-
-/**
- * Get all tasks for a user
- */
-export async function getUserTasks(userId: string, jwt: string): Promise<Task[]> {
+export async function getUserTasks(userId: string, jwt: string): Promise<ApiResult<Task[]>> {
   try {
     const url = `${BACKEND_URL}/api/v1/${userId}/tasks`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
     const response = await fetch(url, {
       headers: createHeaders(jwt),
-      cache: 'no-store', // Always fetch fresh data
-      next: { revalidate: 0 },
+      cache: 'no-store',
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      await handleApiError(response, 'Fetch tasks');
+      return { data: [], backendConnected: true }; // Backend up but error
     }
 
     const tasks = await response.json();
-    console.log(`✓ Fetched ${tasks.length} tasks for user ${userId}`);
-    return tasks;
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-    // Return empty array to prevent UI crashes
-    return [];
+    return { data: tasks, backendConnected: true };
+  } catch {
+    // Backend down or network error - return empty gracefully
+    return { data: [], backendConnected: false };
   }
 }
 

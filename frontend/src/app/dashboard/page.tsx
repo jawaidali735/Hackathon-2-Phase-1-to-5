@@ -4,11 +4,18 @@
  * Production-ready with proper authentication and error handling
  */
 
+/**
+ * Dashboard Page - Server Component
+ * Displays user tasks with real-time updates
+ * Production-ready with proper authentication and error handling
+ */
+
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import AddTaskForm from '@/components/dashboard/add-task-form';
 import ClientTaskList from '@/components/dashboard/client-task-list';
+import ChatWrapper from '@/components/chatbot/ChatWrapper';
 import { getJWT } from '@/lib/get-jwt';
 import { getUserTasks } from '@/services/server-api';
 import SignOutButton from '@/components/SignOutButton';
@@ -26,21 +33,13 @@ export default async function DashboardPage() {
 
   if (!session?.user) redirect('/login');
 
-  // 3️⃣ Fetch tasks from backend ONLY
-  // ✅ Do NOT send session.user.id
   // Extract user ID from session to pass to API
   const userId = session.user.id;
   const jwt = await getJWT();
-  if (!jwt) redirect('/login'); // no JWT, force login
+  if (!jwt) redirect('/login');
 
-  let tasks: Task[] = [];
-  try {
-    tasks = await getUserTasks(userId, jwt);
-  } catch (error) {
-    console.error('Failed to fetch tasks:', error);
-    // Continue with empty tasks array
-    tasks = [];
-  }
+  // Fetch tasks - gracefully handles backend down
+  const { data: tasks, backendConnected } = await getUserTasks(userId, jwt);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -61,6 +60,19 @@ export default async function DashboardPage() {
       <main>
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
+
+            {/* Backend Offline Banner */}
+            {!backendConnected && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-amber-800 font-medium">Service temporarily unavailable</p>
+                  <p className="text-amber-600 text-sm">We&apos;re working to restore connection. Your data is safe.</p>
+                </div>
+              </div>
+            )}
 
             {/* Task Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -92,6 +104,9 @@ export default async function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* AI Chat Assistant - Cohere Chatbot */}
+      <ChatWrapper userId={userId} token={jwt} />
     </div>
   );
 }

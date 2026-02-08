@@ -27,4 +27,17 @@ class Settings:
     # API settings
     API_V1_STR: str = "/api/v1"
 
+    # AI Chatbot settings (Phase 3) - Fallback order: Groq -> Gemini -> OpenAI
+    _GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    _GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    _COHERE_API_KEY: str = os.getenv("COHERE_API_KEY", "")  # Disabled - incompatible with strict mode
+    _OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
+    # Use default API key if environment variable is not set or is empty
+    GROQ_API_KEY: str = _GROQ_API_KEY if _GROQ_API_KEY else ""
+    GEMINI_API_KEY: str = _GEMINI_API_KEY if _GEMINI_API_KEY else ""
+    COHERE_API_KEY: str = _COHERE_API_KEY if _COHERE_API_KEY else ""
+    # Don't use invalid OpenRouter key as OpenAI key - let it be empty to skip OpenAI fallback
+    OPENAI_API_KEY: str = _OPENAI_API_KEY if _OPENAI_API_KEY and not _OPENAI_API_KEY.startswith("sk-or-") else ""
+
 settings = Settings()

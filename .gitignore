@@ -1,2 +1,28 @@
 .vercel
 .env*.local
+
+# Environment files with secrets
+.env
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+nul
+
+# Test files at root
+test_*.py
+check_paths.py

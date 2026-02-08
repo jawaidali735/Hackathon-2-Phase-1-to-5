@@ -1,12 +1,12 @@
 <!-- SYNC IMPACT REPORT:
-Version change: 4.0.0 → 5.0.0
-Modified principles: Spec-Driven Development, Tech Stack, Project Structure
-Added sections: Phase 2 Standards, Frontend & Auth Spec, Backend & API Spec
-Removed sections: Old UI/UX Standards, Old API Design Standards
+Version change: 5.0.0 → 1.2.0 (version correction + Phase-III additions)
+Modified principles: Development Governance (extended with AI Agent principles)
+Added sections: Phase 3 Standards (AI-Powered Chatbot), AI Agent Architecture, MCP Tools Standards, Conversation Management
+Removed sections: None
 Templates requiring updates: ✅ Updated plan-template.md, ✅ Updated spec-template.md, ✅ Updated tasks-template.md
 Follow-up TODOs: None
 -->
-# Full-Stack AI-Powered Todo Application Constitution (Phase 2)
+# Full-Stack AI-Powered Todo Application Constitution (Phase 3)
 
 ## Core Principles
 
@@ -24,6 +24,9 @@ All project standards and technical choices are governed by this constitution. A
 
 ### Statelessness with JWT Authentication
 The application must use stateless architecture with JWT tokens enabling scalable, session-free backend operations. No server-side session storage is allowed. Authentication must be handled through Better Auth with JWT plugin.
+
+### Agent-First Design (Phase 3)
+AI agents must operate through well-defined MCP tools with no direct database access. All task operations must be executed via stateless MCP tool calls. Clear separation: UI → Agent → MCP Tools → Database.
 
 ## Development Governance
 
@@ -76,6 +79,28 @@ Changes to this constitution require explicit approval and must update the versi
 - **Security:** Password hashing with bcrypt, secure token validation
 - **Cross-Platform:** JWT tokens must work across frontend and backend
 
+## Tech Stack (Phase 3 Standards - AI Agent)
+
+### AI Agent Requirements:
+- **Framework:** OpenAI Agents SDK (Official)
+- **MCP Integration:** Official MCP SDK for Python
+- **Agent Type:** Stateless agent with tool execution
+- **Conversation Storage:** PostgreSQL (Neon) with conversation and message tables
+
+### MCP Tools Requirements:
+- **Design:** Stateless, schema-defined tools only
+- **Access Pattern:** Tools → Database (agents NEVER access database directly)
+- **Tool Categories:** Task CRUD operations (create, read, update, delete, list, toggle)
+- **Input Validation:** All tool inputs must be validated and typed
+- **Error Handling:** Tools must return structured error responses
+
+### Chat Endpoint Requirements:
+- **Framework:** FastAPI stateless endpoint
+- **Input:** User message + conversation_id (optional for new conversations)
+- **Output:** Agent response + updated conversation_id
+- **Context Rebuild:** Conversation history loaded from database on each request
+- **Persistence:** All messages (user + agent) persisted after processing
+
 ## Project Structure & Specs
 
 ### Phase 1: Frontend & Auth Spec
@@ -94,6 +119,16 @@ Changes to this constitution require explicit approval and must update the versi
 - **Data Validation:** Use SQLModel for schema validation and type safety
 - **Documentation:** Auto-generated API documentation with FastAPI's built-in Swagger UI
 
+### Phase 3: AI-Powered Chatbot Spec
+- **Directory:** `backend/` (extend existing backend)
+- **Agent Design:** Stateless OpenAI agent with MCP tool integration
+- **MCP Tools:** Create stateless tools for all task operations (no direct database access)
+- **Chat Endpoint:** POST `/api/chat` - accepts user message, returns agent response
+- **Conversation Management:** Store conversations and messages in PostgreSQL
+- **Context Handling:** Rebuild conversation context from database on each request
+- **Tool Execution:** Agent invokes MCP tools which handle database operations
+- **Tracing:** Persist all AI actions and tool calls for audit and debugging
+
 ## Environment Configuration
 
 ### Frontend (.env.local):
@@ -108,6 +143,7 @@ Changes to this constitution require explicit approval and must update the versi
 - `JWT_ALGORITHM`
 - `JWT_EXPIRATION_DAYS`
 - `CORS_ORIGINS`
+- `OPENAI_API_KEY` (Phase 3)
 
 ### Environment File Requirements:
 - Both frontend and backend must have identical `BETTER_AUTH_SECRET`
@@ -117,9 +153,9 @@ Changes to this constitution require explicit approval and must update the versi
 
 ## API Design Standards
 
-### Authentication :
-- sign in and sign out sesssion etc will be sued in frontend
-- betterauth has buuiltedn fucntion of so use that.
+### Authentication:
+- Sign in and sign out session etc will be used in frontend
+- Better Auth has built-in functions so use that
 
 ### Task Management Endpoints (JWT required):
 - GET /api/{user_id}/tasks - List user's tasks
@@ -129,12 +165,51 @@ Changes to this constitution require explicit approval and must update the versi
 - DELETE /api/{user_id}/tasks/{id} - Delete task
 - PATCH /api/{user_id}/tasks/{id}/complete - Toggle task completion
 
+### AI Chat Endpoint (Phase 3, JWT required):
+- POST /api/chat - Natural language task management
+  - Input: `{ "message": "user message", "conversation_id": "optional" }`
+  - Output: `{ "response": "agent response", "conversation_id": "uuid" }`
+  - Behavior: Agent uses MCP tools to execute task operations
+  - Context: Conversation history rebuilt from database on each request
+
 ### API Design Principles:
 - RESTful conventions with proper HTTP status codes (200, 201, 400, 401, 403, 404, 500)
 - Explicit request and response schemas
 - Predictable error responses
 - Consistent JSON formatting
 - Proper validation and sanitization
+
+## AI Agent Architecture (Phase 3)
+
+### Agent Design Principles:
+- **Stateless Operation:** Agent instances do not maintain state between requests
+- **No Direct Database Access:** Agents MUST use MCP tools for all data operations
+- **Tool-First Approach:** All task actions executed exclusively via MCP tools
+- **Context Rebuilding:** Load conversation history from database on each request
+- **Clear Separation:** UI → Agent → MCP Tools → Database (strict layering)
+
+### MCP Tools Standards:
+- **Stateless Design:** Tools receive all required context as parameters
+- **Schema Definition:** All tools must have well-defined input/output schemas
+- **Database Access:** Tools are the ONLY layer that directly accesses the database
+- **User Context:** Tools receive user_id from JWT for data isolation
+- **Error Handling:** Tools return structured errors (not exceptions to agent)
+- **Idempotency:** Tools should be idempotent where applicable
+
+### Required MCP Tools:
+1. `create_task` - Create a new task for the user
+2. `list_tasks` - List all tasks for the user (with optional filters)
+3. `get_task` - Retrieve a specific task by ID
+4. `update_task` - Update task details (title, description)
+5. `delete_task` - Delete a task
+6. `toggle_task_completion` - Mark task as complete/incomplete
+
+### Conversation Management:
+- **Storage:** All conversations stored in PostgreSQL
+- **Messages:** Both user messages and agent responses persisted
+- **Context Window:** Load relevant conversation history for agent context
+- **User Isolation:** Conversations tied to user_id (enforced by JWT)
+- **Restart Capability:** Users can resume conversations after restart
 
 ## Authentication & Security
 
@@ -158,9 +233,16 @@ Changes to this constitution require explicit approval and must update the versi
 - User isolation: All queries filtered by authenticated user_id
 - CORS: Configure from CORS_ORIGINS environment variable
 
+### AI Agent Security (Phase 3):
+- Chat endpoint requires valid JWT
+- MCP tools receive user_id from JWT (not from user input)
+- Tools enforce user isolation at database query level
+- Agent cannot bypass user isolation through tool calls
+- All AI actions traced and associated with user_id
+
 ## Database Schema Requirements
 
-### Users Table:(frontend ORM table in neon)
+### Users Table (frontend ORM table in Neon):
 - id (Primary Key, UUID/string)
 - email (Unique, indexed)
 - password_hash (hashed with bcrypt)
@@ -176,27 +258,52 @@ Changes to this constitution require explicit approval and must update the versi
 - created_at (timestamp)
 - updated_at (timestamp)
 
+### Conversations Table (Phase 3):
+- id (Primary Key, UUID/string)
+- user_id (Foreign Key to users.id, indexed)
+- created_at (timestamp)
+- updated_at (timestamp)
+
+### Messages Table (Phase 3):
+- id (Primary Key, UUID/string)
+- conversation_id (Foreign Key to conversations.id, indexed)
+- role (enum: 'user' | 'assistant')
+- content (text, not null)
+- created_at (timestamp)
+
 ### Relationships:
 - Foreign key constraint: tasks.user_id → users.id (CASCADE delete)
+- Foreign key constraint: conversations.user_id → users.id (CASCADE delete)
+- Foreign key constraint: messages.conversation_id → conversations.id (CASCADE delete)
 - Indexes on user_id for efficient querying
 - Index on completed status for filtering
+- Index on conversation_id for message retrieval
 
 ## UI/UX Standards
 
 ### Primary UI Goal:
-Build a **beautiful, professional Todo application dashboard**
+Build a **beautiful, professional Todo application dashboard** with natural language chat interface (Phase 3)
 
 ### UI Requirements:
 - Modern, clean, visually appealing design
 - Professional SaaS aesthetic (Linear/Notion/Vercel style)
 - Clear task list visualization with distinct completed/pending states
 - Smooth task creation and update interactions
+- **Chat Interface (Phase 3):** Natural language input for task management
 - Clear loading, empty, and error states
 - Fully responsive across devices (mobile-first approach)
 - Auth-aware UI (no unauthenticated access to tasks)
 - Loading states, smooth transitions, hover effects
 - Accessibility: ARIA labels, keyboard navigation, proper contrast
 - Error handling: Clear validation messages
+
+### Chat Interface Requirements (Phase 3):
+- Conversational UI for managing tasks via natural language
+- Display conversation history with clear user/agent message distinction
+- Show real-time agent thinking/processing states
+- Display tool execution feedback (e.g., "Creating task...", "Task completed")
+- Allow users to switch between chat and traditional UI
+- Persist conversation across page refreshes
 
 ## Code Quality Standards
 
@@ -213,6 +320,13 @@ Build a **beautiful, professional Todo application dashboard**
 - Proper error handling and logging
 - Input validation and sanitization
 - Efficient database queries with proper indexing
+
+### AI Agent Standards (Phase 3):
+- Type-safe MCP tool definitions
+- Clear tool descriptions for agent understanding
+- Comprehensive error handling in tools
+- Logging of all agent actions and tool calls
+- Validation of tool inputs and outputs
 
 ### General Standards:
 - Proper HTTP status codes
@@ -237,13 +351,24 @@ Build a **beautiful, professional Todo application dashboard**
 - User data isolation and security
 - Auto-generated API documentation
 
+### Phase 3 (AI-Powered Chatbot):
+- OpenAI agent with MCP tool integration
+- Stateless chat endpoint working correctly
+- Users can manage todos via natural language
+- Agent correctly invokes MCP tools for task operations
+- Conversation persists and resumes after restart
+- All tool calls traced and logged
+- System remains secure with user isolation enforced
+- No direct database access by agent (tools only)
+
 ### Overall Success:
 - Zero manual coding (Claude Code only)
-- All specifications implemented according to Phase 1 and Phase 2 requirements
+- All specifications implemented according to Phase 1, Phase 2, and Phase 3 requirements
 - Proper environment configuration with secure secret management
-- Professional-quality UI/UX
+- Professional-quality UI/UX with chat interface
 - Complete API functionality with proper security
 - Multi-user data isolation working correctly
+- AI agent correctly managing tasks through natural language
 
 ## Constraints
 
@@ -258,6 +383,13 @@ Build a **beautiful, professional Todo application dashboard**
 - Strict adherence to Next.js App Router (not Pages Router)
 - Use of uv for Python environment management
 - Proper separation of frontend and backend concerns
+- **Phase 3 Constraints:**
+  - Agents MUST NOT access database directly
+  - All task operations MUST go through MCP tools
+  - MCP tools MUST be stateless and schema-defined
+  - Conversation context MUST be rebuilt from database each request
+  - OpenAI Agents SDK and Official MCP SDK MUST be used
+  - No manual tool execution bypassing the agent
 
 ## Quality Assurance
 
@@ -267,9 +399,15 @@ Build a **beautiful, professional Todo application dashboard**
 - Authentication must be validated on every secured endpoint
 - Frontend must properly handle authentication states
 - Error responses must be consistent and informative
+- **Phase 3 QA:**
+  - Agent responses must be coherent and contextually appropriate
+  - MCP tools must execute correctly and return proper results
+  - Conversation state must persist across requests
+  - Tool calls must be traced and logged
+  - User isolation must be enforced at tool level
 
 ## Governance
 
 This constitution establishes the fundamental principles and constraints that govern all development decisions for the Full-Stack AI-Powered Todo Application. All code changes, feature additions, and architectural decisions must align with these principles. Any proposed changes that conflict with these principles require explicit amendment to the constitution with clear justification.
 
-**Version**: 5.0.0 | **Ratified**: 2026-01-15 | **Last Amended**: 2026-01-19
+**Version**: 1.2.0 | **Ratified**: 2026-01-15 | **Last Amended**: 2026-02-05

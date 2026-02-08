@@ -1,4 +1,4 @@
-from sqlmodel import create_engine, Session
+from sqlmodel import create_engine, Session, SQLModel
 from sqlalchemy.pool import QueuePool
 import os
 from typing import Generator
@@ -8,6 +8,11 @@ import logging
 
 # Get database URL from settings
 from app.core.config import settings
+
+# Import all models to ensure they are registered with SQLModel
+from app.models.task import Task
+from app.models.conversation import Conversation
+from app.models.message import Message
 DATABASE_URL = settings.DATABASE_URL
 
 # Create engine with enhanced connection pooling
@@ -47,3 +52,11 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")  # Enable foreign key constraints
         cursor.close()
+
+
+def create_db_and_tables():
+    """
+    Create all database tables defined by SQLModel.
+    Called during application startup.
+    """
+    SQLModel.metadata.create_all(engine)

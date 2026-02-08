@@ -24,6 +24,20 @@ export default function ClientTaskList({ initialTasks, userId }: ClientTaskListP
     setLoadingTaskId(null); // Clear loading state when new data arrives
   }, [initialTasks]);
 
+  // Listen for tasksChanged event to refresh the task list
+  useEffect(() => {
+    const handleTasksChanged = () => {
+      // Refresh to get latest data from server when tasks are changed via chatbot
+      router.refresh();
+    };
+
+    window.addEventListener('tasksChanged', handleTasksChanged);
+
+    return () => {
+      window.removeEventListener('tasksChanged', handleTasksChanged);
+    };
+  }, [router]); // Include router in dependency array
+
   // Function to toggle task completion - NO optimistic update, wait for DB
   const toggleTaskCompletion = async (taskId: string) => {
     setError(null);

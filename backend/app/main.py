@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlmodel import Session
-from app.db.database import engine, get_session
+from app.db.database import engine, get_session, create_db_and_tables
 from app.api.tasks import router as tasks_router
+from app.api.routes.chat import router as chatbot_router
 from app.core.config import settings
 
 # Configure logging
@@ -23,6 +24,10 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print("Starting up the application...")
+
+    # Create database tables if they don't exist
+    create_db_and_tables()
+    print("Database tables created/verified successfully.")
 
     # Verify database connectivity
     try:
@@ -88,6 +93,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(tasks_router)
+app.include_router(chatbot_router, prefix="/api/v1")  # Cohere chatbot at /api/v1/{user_id}/chat
 
 @app.get("/")
 async def root():

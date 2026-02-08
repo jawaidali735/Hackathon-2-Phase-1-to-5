@@ -101,6 +101,64 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return user_id
 
 
+async def get_current_user_email(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[str]:
+    """
+    Get the current user's email from the JWT token.
+
+    Args:
+        credentials: HTTP authorization credentials from the request
+
+    Returns:
+        User email from the token payload, or None if not found
+    """
+    token = credentials.credentials
+    payload = verify_token(token)
+
+    if payload is None:
+        return None
+
+    return payload.get("email")
+
+
+async def get_current_user_name(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[str]:
+    """
+    Get the current user's display name from the JWT token.
+    Tries user_metadata.name, then derives from email.
+
+    Args:
+        credentials: HTTP authorization credentials from the request
+
+    Returns:
+        User display name, or None if not extractable
+    """
+    token = credentials.credentials
+    payload = verify_token(token)
+
+    if payload is None:
+        return None
+
+    # Try Supabase user_metadata first
+    user_metadata = payload.get("user_metadata", {})
+    if isinstance(user_metadata, dict):
+        name = user_metadata.get("full_name") or user_metadata.get("name") or user_metadata.get("display_name")
+        if name:
+            return name
+
+    # Try top-level name field
+    name = payload.get("name") or payload.get("full_name")
+    if name:
+        return name
+
+    # Derive from email
+    email = payload.get("email")
+    if email:
+        local_part = email.split("@")[0]
+        # Convert "john.doe" or "john_doe" to "John Doe"
+        return local_part.replace(".", " ").replace("_", " ").replace("-", " ").title()
+
+    return None
+
+
 def verify_user_id_match(token_user_id: str, url_user_id: str) -> bool:
     """
     Verify that the user ID in the JWT token matches the user ID in the URL.
