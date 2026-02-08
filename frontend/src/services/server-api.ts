@@ -26,6 +26,11 @@ function createHeaders(jwt: string): HeadersInit {
   };
 }
 
+async function handleApiError(response: Response, action: string): Promise<never> {
+  const text = await response.text().catch(() => '');
+  throw new Error(`${action} failed (${response.status}): ${text}`);
+}
+
 /**
  * Get all tasks for a user - returns data + connection status
  */
