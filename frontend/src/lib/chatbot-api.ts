@@ -1,7 +1,7 @@
 import { ChatRequest, ChatResponse, ConversationHistoryMessage } from '@/components/chatbot/types';
 
 // Point to backend server - todo-app backend runs on port 8000
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 class ChatbotApiClient {
   private baseUrl: string;
