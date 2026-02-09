@@ -1,0 +1,15 @@
+{{- if .Values.backend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "todo-chatbot.fullname" . }}-backend
+  labels:
+    {{- include "todo-chatbot.backend.labels" . | nindent 4 }}
+data:
+  # CORS allowed origins (must match backend config.py: CORS_ALLOWED_ORIGINS)
+  CORS_ALLOWED_ORIGINS: {{ .Values.backend.config.corsOrigins | quote }}
+  # JWT signing algorithm
+  JWT_ALGORITHM: {{ .Values.backend.config.jwtAlgorithm | quote }}
+  # JWT token expiration in days
+  JWT_EXPIRATION_DAYS: {{ .Values.backend.config.jwtExpirationDays | quote }}
+{{- end }}

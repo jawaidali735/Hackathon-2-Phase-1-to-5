@@ -1,0 +1,67 @@
+# Virtual environments
+.venv/
+venv/
+env/
+.env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Environment files (secrets)
+.env
+.env.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Docker files (not needed inside container)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in production)
+README.md
+docs/
+
+# Jupyter notebooks (if any)
+*.ipynb
+.ipynb_checkpoints/
+
+# SQLite databases (local dev only)
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Requirements (uv uses pyproject.toml + uv.lock)
+requirements*.txt

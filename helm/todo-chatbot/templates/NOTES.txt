@@ -1,0 +1,67 @@
+================================================================================
+  Todo Chatbot has been deployed!
+================================================================================
+
+{{- if .Values.frontend.enabled }}
+
+FRONTEND (Next.js):
+  Get the frontend URL by running:
+    minikube service {{ include "todo-chatbot.fullname" . }}-frontend --url
+
+  Or manually:
+    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "todo-chatbot.fullname" . }}-frontend)
+    export NODE_IP=$(minikube ip)
+    echo "Frontend: http://$NODE_IP:$NODE_PORT"
+
+{{- end }}
+
+{{- if .Values.backend.enabled }}
+
+BACKEND (FastAPI):
+  Get the backend URL by running:
+    minikube service {{ include "todo-chatbot.fullname" . }}-backend --url
+
+  Or manually:
+    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "todo-chatbot.fullname" . }}-backend)
+    export NODE_IP=$(minikube ip)
+    echo "Backend API: http://$NODE_IP:$NODE_PORT"
+    echo "Backend Docs: http://$NODE_IP:$NODE_PORT/docs"
+
+{{- end }}
+
+================================================================================
+  Verification Commands
+================================================================================
+
+Check pod status:
+  kubectl get pods -l "app.kubernetes.io/part-of=todo-chatbot" --namespace {{ .Release.Namespace }}
+
+Check services:
+  kubectl get services -l "app.kubernetes.io/part-of=todo-chatbot" --namespace {{ .Release.Namespace }}
+
+Run connectivity test:
+  helm test {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+View logs:
+  kubectl logs -l "app.kubernetes.io/component=frontend" --namespace {{ .Release.Namespace }}
+  kubectl logs -l "app.kubernetes.io/component=backend" --namespace {{ .Release.Namespace }}
+
+================================================================================
+  Important Notes
+================================================================================
+
+{{- if or (eq .Values.backend.secrets.databaseUrl "CHANGE_ME") (eq .Values.backend.secrets.betterAuthSecret "CHANGE_ME") (eq .Values.backend.secrets.openaiApiKey "CHANGE_ME") }}
+
+WARNING: You have not set all required secrets!
+Please upgrade the release with actual secret values:
+
+  helm upgrade {{ .Release.Name }} ./helm/todo-chatbot \
+    --set backend.secrets.databaseUrl="postgresql://..." \
+    --set backend.secrets.betterAuthSecret="your-secret" \
+    --set backend.secrets.openaiApiKey="sk-..."
+
+{{- else }}
+
+All secrets have been configured.
+
+{{- end }}

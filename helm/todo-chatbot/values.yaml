@@ -1,0 +1,205 @@
+# =============================================================================
+# Todo Chatbot Helm Chart Values
+# =============================================================================
+# This file contains all configurable parameters for the Todo Chatbot deployment.
+# Override any value using --set flags or a custom values file.
+#
+# Example:
+#   helm install my-todo ./helm/todo-chatbot \
+#     --set backend.replicaCount=2 \
+#     --set backend.secrets.databaseUrl="postgresql://..."
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Frontend Configuration (Next.js)
+# -----------------------------------------------------------------------------
+frontend:
+  # Enable or disable the frontend component
+  enabled: true
+
+  # Number of frontend pod replicas
+  replicaCount: 1
+
+  # Container image settings
+  image:
+    # Image repository name
+    repository: todo-frontend
+    # Image tag (default: latest)
+    tag: latest
+    # Pull policy: Never for Minikube (local images), Always/IfNotPresent for registries
+    pullPolicy: Never
+
+  # Kubernetes Service configuration
+  service:
+    # Service type: NodePort for Minikube external access, ClusterIP for internal only
+    type: NodePort
+    # Service port (external)
+    port: 3000
+    # Container target port
+    targetPort: 3000
+    # Fixed NodePort (optional, leave commented for auto-assignment)
+    # nodePort: 30080
+
+  # Resource requests and limits
+  resources:
+    requests:
+      # Minimum CPU allocation
+      cpu: 100m
+      # Minimum memory allocation
+      memory: 128Mi
+    limits:
+      # Maximum CPU allocation
+      cpu: 500m
+      # Maximum memory allocation
+      memory: 512Mi
+
+  # Liveness probe - restarts container if unhealthy
+  livenessProbe:
+    # HTTP path to check
+    path: /
+    # Seconds before first probe after container starts
+    initialDelaySeconds: 15
+    # Seconds between probes
+    periodSeconds: 20
+    # Seconds before probe times out
+    timeoutSeconds: 5
+    # Consecutive failures before restart
+    failureThreshold: 3
+
+  # Readiness probe - removes from service if not ready
+  readinessProbe:
+    # HTTP path to check
+    path: /
+    # Seconds before first probe after container starts
+    initialDelaySeconds: 5
+    # Seconds between probes
+    periodSeconds: 10
+    # Seconds before probe times out
+    timeoutSeconds: 3
+    # Consecutive failures before marking unready
+    failureThreshold: 3
+
+  # Environment variables for the frontend
+  env:
+    # Backend API URL for server-side rendering (internal DNS)
+    apiBaseUrl: "http://todo-backend:8000"
+    # BetterAuth base URL for origin validation (must match how users access the frontend)
+    betterAuthUrl: "http://localhost:3000"
+
+# -----------------------------------------------------------------------------
+# Backend Configuration (FastAPI)
+# -----------------------------------------------------------------------------
+backend:
+  # Enable or disable the backend component
+  enabled: true
+
+  # Number of backend pod replicas
+  replicaCount: 1
+
+  # Container image settings
+  image:
+    # Image repository name
+    repository: todo-backend
+    # Image tag (default: latest)
+    tag: latest
+    # Pull policy: Never for Minikube (local images), Always/IfNotPresent for registries
+    pullPolicy: Never
+
+  # Kubernetes Service configuration
+  service:
+    # Service type: NodePort for Minikube external access, ClusterIP for internal only
+    type: NodePort
+    # Service port (external)
+    port: 8000
+    # Container target port
+    targetPort: 8000
+    # Fixed NodePort (optional, leave commented for auto-assignment)
+    # nodePort: 30081
+
+  # Resource requests and limits
+  resources:
+    requests:
+      # Minimum CPU allocation
+      cpu: 100m
+      # Minimum memory allocation
+      memory: 128Mi
+    limits:
+      # Maximum CPU allocation
+      cpu: 500m
+      # Maximum memory allocation
+      memory: 512Mi
+
+  # Liveness probe - restarts container if unhealthy
+  livenessProbe:
+    # HTTP path to check (FastAPI docs endpoint)
+    path: /docs
+    # Seconds before first probe after container starts
+    initialDelaySeconds: 20
+    # Seconds between probes
+    periodSeconds: 30
+    # Seconds before probe times out
+    timeoutSeconds: 5
+    # Consecutive failures before restart
+    failureThreshold: 3
+
+  # Readiness probe - removes from service if not ready
+  readinessProbe:
+    # HTTP path to check (FastAPI docs endpoint)
+    path: /docs
+    # Seconds before first probe after container starts
+    initialDelaySeconds: 10
+    # Seconds between probes
+    periodSeconds: 10
+    # Seconds before probe times out
+    timeoutSeconds: 3
+    # Consecutive failures before marking unready
+    failureThreshold: 3
+
+  # Non-sensitive configuration (stored in ConfigMap)
+  config:
+    # CORS allowed origins
+    corsOrigins: "http://localhost:3000"
+    # JWT signing algorithm
+    jwtAlgorithm: "HS256"
+    # JWT token expiration in days
+    jwtExpirationDays: "7"
+
+  # Sensitive configuration (stored in Secret)
+  # IMPORTANT: Override these values at install time with --set flags
+  secrets:
+    # PostgreSQL connection URL (Neon or other provider)
+    # Example: postgresql://user:pass@host:5432/dbname
+    databaseUrl: "CHANGE_ME"
+    # Secret key for Better Auth JWT signing
+    betterAuthSecret: "CHANGE_ME"
+    # OpenAI API key for AI chatbot features
+    openaiApiKey: "CHANGE_ME"
+    # Groq API key for LiteLLM AI agent
+    groqApiKey: "CHANGE_ME"
+
+# -----------------------------------------------------------------------------
+# Shared Security Context
+# -----------------------------------------------------------------------------
+# Pod-level security settings applied to all containers
+podSecurityContext:
+  # Require containers to run as non-root user
+  runAsNonRoot: true
+  # Filesystem group for volume mounts
+  fsGroup: 1001
+
+# Container-level security settings
+containerSecurityContext:
+  # Prevent privilege escalation
+  allowPrivilegeEscalation: false
+  # Run as non-root user (UID 1001)
+  runAsUser: 1001
+  # Run as non-root group (GID 1001)
+  runAsGroup: 1001
+
+# -----------------------------------------------------------------------------
+# Optional Overrides
+# -----------------------------------------------------------------------------
+# Override the chart name (default: todo-chatbot)
+nameOverride: ""
+# Override the full release name
+fullnameOverride: ""

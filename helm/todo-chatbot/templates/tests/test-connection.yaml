@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "todo-chatbot.fullname" . }}-test-connection
+  labels:
+    {{- include "todo-chatbot.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    {{- if .Values.frontend.enabled }}
+    - name: test-frontend
+      image: busybox:latest
+      command: ['wget']
+      args:
+        - '--spider'
+        - '--timeout=5'
+        - 'http://{{ include "todo-chatbot.fullname" . }}-frontend:{{ .Values.frontend.service.port }}/'
+    {{- end }}
+    {{- if .Values.backend.enabled }}
+    - name: test-backend
+      image: busybox:latest
+      command: ['wget']
+      args:
+        - '--spider'
+        - '--timeout=5'
+        - 'http://{{ include "todo-chatbot.fullname" . }}-backend:{{ .Values.backend.service.port }}/docs'
+    {{- end }}

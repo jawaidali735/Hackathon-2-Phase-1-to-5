@@ -1,0 +1,2 @@
+# This file exists to keep the empty charts/ directory in Git
+# Helm expects this directory to exist for subcharts (none used in this chart)

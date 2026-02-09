@@ -1,0 +1,33 @@
+apiVersion: v2
+name: todo-chatbot
+description: A Helm chart for deploying the Todo Chatbot application (Next.js frontend + FastAPI backend) to Kubernetes
+
+# Chart type: application (deployable) vs library (reusable templates)
+type: application
+
+# Chart version - incremented on chart changes
+version: 0.1.0
+
+# Application version - tracks the deployed application version
+appVersion: "1.0.0"
+
+# Maintainers
+maintainers:
+  - name: Todo Chatbot Team
+    email: team@example.com
+
+# Keywords for chart discovery
+keywords:
+  - todo
+  - chatbot
+  - nextjs
+  - fastapi
+  - ai
+
+# Home page and sources
+home: https://github.com/example/todo-app
+sources:
+  - https://github.com/example/todo-app
+
+# Dependencies (none for this chart)
+dependencies: []

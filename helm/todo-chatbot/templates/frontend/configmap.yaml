@@ -1,0 +1,13 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "todo-chatbot.fullname" . }}-frontend
+  labels:
+    {{- include "todo-chatbot.frontend.labels" . | nindent 4 }}
+data:
+  # BetterAuth base URL for origin validation (must match browser access URL)
+  BETTER_AUTH_URL: {{ .Values.frontend.env.betterAuthUrl | quote }}
+  # Fix Node.js fetch IPv6 timeout in Docker/Minikube networking
+  NODE_OPTIONS: "--dns-result-order=ipv4first"
+{{- end }}
